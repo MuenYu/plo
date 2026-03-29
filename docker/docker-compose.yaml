@@ -188,6 +188,21 @@ services:
       interval: 10s
       timeout: 5s
       retries: 6
+  # ── Cloudflared Tunnel ─────────────────────────────────────────────────────
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: deer-flow-cloudflared
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARED_TOKEN}
+    environment:
+      - CLOUDFLARED_TOKEN=${CLOUDFLARED_TOKEN}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - deer-flow
+    restart: unless-stopped
+    depends_on:
+      - nginx
+
 networks:
   deer-flow:
     driver: bridge

@@ -49,6 +49,8 @@ make docker-start
 
 Access at http://localhost:2026
 
+For public access via Cloudflare Tunnel, see [Public Access](#public-access-optional) below.
+
 ### Local Development
 
 Requirements: Python 3.12+, Node.js 22+, pnpm, uv
@@ -58,6 +60,34 @@ make check      # Verify prerequisites
 make install    # Install dependencies
 make dev        # Start development server
 ```
+
+## Public Access (Optional)
+
+Expose PLO to the internet via Cloudflare Tunnel:
+
+### 1. Configure the Tunnel
+
+In [Cloudflare Zero Trust Dashboard](https://one.dash.cloudflare.com):
+
+1. Go to **Networks** → **Tunnels** → Select your tunnel
+2. Under **Public Hostname**, edit your hostname
+3. Set **Service** to: `http://host.docker.internal:2026`
+4. Save
+
+### 2. Start with Tunnel
+
+```bash
+# Set your tunnel token
+export CLOUDFLARED_TOKEN="your-token"
+
+# Or save it to a file
+echo "your-token" > backend/.deer-flow/.cloudflared-token
+
+# Start with tunnel
+make up
+```
+
+When the tunnel token is set, `make up` automatically starts a Cloudflare tunnel alongside the main services. Access your instance from any device via the Cloudflare-assigned URL.
 
 ## Configuration
 

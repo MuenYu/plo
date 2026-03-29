@@ -81,6 +81,25 @@ else
 fi
 
 
+# ── CLOUDFLARED_TOKEN ────────────────────────────────────────────────────────
+# Optional: Cloudflare Tunnel token for public access.
+# Set CLOUDFLARED_TOKEN environment variable or create .cloudflared-token file.
+
+if [ -z "$CLOUDFLARED_TOKEN" ]; then
+    _token_file="$DEER_FLOW_HOME/.cloudflared-token"
+    if [ -f "$_token_file" ]; then
+        export CLOUDFLARED_TOKEN
+        CLOUDFLARED_TOKEN="$(cat "$_token_file")"
+        echo -e "${GREEN}✓ CLOUDFLARED_TOKEN loaded from $_token_file${NC}"
+    fi
+fi
+
+if [ -n "$CLOUDFLARED_TOKEN" ]; then
+    echo -e "${GREEN}✓ CLOUDFLARED_TOKEN is set${NC}"
+else
+    echo -e "${YELLOW}⚠ CLOUDFLARED_TOKEN not set — tunnel will not start${NC}"
+fi
+
 # ── BETTER_AUTH_SECRET ───────────────────────────────────────────────────────
 # Required by Next.js in production. Generated once and persisted so auth
 # sessions survive container restarts.
@@ -146,6 +165,7 @@ if [ "$CMD" = "down" ]; then
     export DEER_FLOW_DOCKER_SOCKET="${DEER_FLOW_DOCKER_SOCKET:-/var/run/docker.sock}"
     export DEER_FLOW_REPO_ROOT="${DEER_FLOW_REPO_ROOT:-$REPO_ROOT}"
     export BETTER_AUTH_SECRET="${BETTER_AUTH_SECRET:-placeholder}"
+    export CLOUDFLARED_TOKEN="${CLOUDFLARED_TOKEN:-placeholder}"
     "${COMPOSE_CMD[@]}" down
     exit 0
 fi
@@ -168,6 +188,12 @@ if [ "$sandbox_mode" = "provisioner" ]; then
 else
     services="frontend gateway langgraph nginx"
     extra_args=""
+fi
+
+# Add cloudflared service if token is set
+if [ -n "$CLOUDFLARED_TOKEN" ]; then
+    services="$services cloudflared"
+    echo -e "${GREEN}✓ Cloudflare tunnel will be started${NC}"
 fi
 
 
@@ -205,6 +231,11 @@ echo ""
 echo "  🌐 Application: http://localhost:${PORT:-2026}"
 echo "  📡 API Gateway: http://localhost:${PORT:-2026}/api/*"
 echo "  🤖 LangGraph:   http://localhost:${PORT:-2026}/api/langgraph/*"
+if [ -n "$CLOUDFLARED_TOKEN" ]; then
+    echo ""
+    echo "  🌎 Cloudflare Tunnel: Active (public access enabled)"
+    echo "     Check tunnel dashboard: https://one.dash.cloudflare.com"
+fi
 echo ""
 echo "  Manage:"
 echo "    make down        — stop and remove containers"
